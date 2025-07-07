@@ -369,17 +369,56 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 
 function TopBar({ isDark, toggleDarkMode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  
+  // Dummy notifications data
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "AQI Alert: Delhi",
+      message: "AQI has crossed 200 (Unhealthy) in Delhi. Take necessary precautions.",
+      time: "2 hours ago",
+      read: false
+    },
+    {
+      id: 2,
+      title: "AQI Alert: Mumbai",
+      message: "PM2.5 levels have increased to unhealthy levels. Consider wearing masks outdoors.",
+      time: "5 hours ago",
+      read: false
+    },
+    {
+      id: 3,
+      title: "AQI Alert: Bangalore",
+      message: "Ozone (O₃) levels have reached unhealthy for sensitive groups.",
+      time: "1 day ago",
+      read: true
+    }
+  ]);
 
   const handleNavigation = (path) => {
     navigate(path, { state: { isdark: isDark } });
     setMenuOpen(false); // Close menu after navigating
   };
+
+  const toggleNotifications = () => {
+    setNotificationsOpen(!notificationsOpen);
+  };
+
+  const markAsRead = (id) => {
+    setNotifications(notifications.map(notification => 
+      notification.id === id ? {...notification, read: true} : notification
+    ));
+  };
+
+  const unreadCount = notifications.filter(notification => !notification.read).length;
 
   // Determine active button based on current path
   const isActive = (path) => currentPath === path;
@@ -498,7 +537,41 @@ function TopBar({ isDark, toggleDarkMode }) {
       </div>
 
       {/* Right Block: Dark Mode Toggle and Hamburger Menu */}
-      <div className="right-controls">
+      <div className="right-controls">        
+        <div className="notification-container">
+          <button onClick={toggleNotifications} className="notification-button">
+            <Bell size={20} />
+            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+          </button>
+          
+          {notificationsOpen && (
+            <div className="notifications-dropdown">
+              <div className="notifications-header">
+                <h3>Notifications</h3>
+              </div>
+              <div className="notifications-list">
+                {notifications.length > 0 ? (
+                  notifications.map(notification => (
+                    <div 
+                      key={notification.id} 
+                      className={`notification-item ${notification.read ? 'read' : 'unread'}`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <div className="notification-content">
+                        <h4>{notification.title}</h4>
+                        <p>{notification.message}</p>
+                        <span className="notification-time">{notification.time}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-notifications">No notifications</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        
         <button onClick={toggleDarkMode} className="dark-mode-icon">
           {isDark ? (
             <svg xmlns="http://www.w3.org/2000/svg" className="mode-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -568,6 +641,15 @@ function TopBar({ isDark, toggleDarkMode }) {
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             z-index: 10;
+            
+            .notifications-dropdown {
+              width: 280px;
+              right: -70px;
+            }
+            
+            .notifications-dropdown:before {
+              right: 82px;
+            }
           }
           
           .dark-mode .nav-buttons {
@@ -681,6 +763,153 @@ function TopBar({ isDark, toggleDarkMode }) {
         
         .chatbot-btn:hover, .chatbot-btn.active {
           background-image: linear-gradient(135deg, #38a169, #2f855a);
+        }
+        
+        /* Notification styles */
+        .notification-container {
+          position: relative;
+          margin-right: 15px;
+        }
+        
+        .notification-button {
+          background: none;
+          border: none;
+          color: var(--text-primary);
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s ease;
+          position: relative;
+        }
+        
+        .notification-button:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .dark-mode .notification-button:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .notification-badge {
+          position: absolute;
+          top: 0;
+          right: 0;
+          background-color: #e74c3c;
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .notifications-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          width: 320px;
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+          overflow: hidden;
+          margin-top: 8px;
+        }
+        
+        .dark-mode .notifications-dropdown {
+          background-color: #2d3748;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .notifications-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .dark-mode .notifications-header {
+          border-bottom: 1px solid #4a5568;
+        }
+        
+        .notifications-header h3 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+        }
+        
+        .notifications-list {
+          max-height: 350px;
+          overflow-y: auto;
+        }
+        
+        .notification-item {
+          padding: 12px 16px;
+          border-bottom: 1px solid #e2e8f0;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .dark-mode .notification-item {
+          border-bottom: 1px solid #4a5568;
+        }
+        
+        .notification-item:hover {
+          background-color: #f7fafc;
+        }
+        
+        .dark-mode .notification-item:hover {
+          background-color: #2c3748;
+        }
+        
+        .notification-item.unread {
+          background-color: #ebf8ff;
+        }
+        
+        .dark-mode .notification-item.unread {
+          background-color: #2a4365;
+        }
+        
+        .notification-content h4 {
+          margin: 0 0 4px 0;
+          font-size: 14px;
+          font-weight: 600;
+        }
+        
+        .notification-content p {
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          color: #4a5568;
+          line-height: 1.4;
+        }
+        
+        .dark-mode .notification-content p {
+          color: #cbd5e0;
+        }
+        
+        .notification-time {
+          font-size: 11px;
+          color: #718096;
+          display: block;
+        }
+        
+        .dark-mode .notification-time {
+          color: #a0aec0;
+        }
+        
+        .no-notifications {
+          padding: 16px;
+          text-align: center;
+          color: #718096;
+          font-size: 14px;
+        }
+        
+        .dark-mode .no-notifications {
+          color: #a0aec0;
         }
         
         /* Right block for dark mode and hamburger icons */
